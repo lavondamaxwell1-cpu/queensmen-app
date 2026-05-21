@@ -1,0 +1,25 @@
+{
+  "name": "queensmen-server",
+  "version": "1.0.0",
+  "description": "Backend API for The QueensMen modeling business website",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cloudinary": "^2.10.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^9.0.0",
+    "multer": "^2.1.1",
+    "resend": "^6.12.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
