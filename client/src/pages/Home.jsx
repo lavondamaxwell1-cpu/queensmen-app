@@ -75,16 +75,6 @@ export default function Home() {
     };
   }, []);
 
-  const businessName = settings?.businessName || "The QueensMen";
-  const tagline = settings?.tagline || "Exclusive Professional Male Models";
-  const phone = settings?.phone || "(704) 555-1234";
-  const email = settings?.email || "info@thequeensmen.com";
-  const instagram = settings?.instagram || "";
-  const facebook = settings?.facebook || "";
-  const tiktok = settings?.tiktok || "";
-  const logo = settings?.logo || "";
-  const ownerPhoto = settings?.ownerPhoto || "";
-
   const heroDescription =
     settings?.heroDescription ||
     "The Queensmen are a set of exclusive professional male models. They represent classy and vintage Gentle Men with a touch of boldness.";
@@ -99,6 +89,37 @@ export default function Home() {
     settings?.ownerQuote ||
     "Classy. Vintage. Bold. That is the standard of The QueensMen.";
 
+
+  const businessName = settings?.businessName || "The QueensMen";
+  const tagline = settings?.tagline || "Exclusive Professional Male Models";
+  const phone = settings?.phone || "(704) 555-1234";
+  const email = settings?.email || "info@thequeensmen.com";
+  const instagram = settings?.instagram || "";
+  const facebook = settings?.facebook || "";
+  const tiktok = settings?.tiktok || "";
+  const logo = settings?.logo || "";
+  const ownerPhoto = settings?.ownerPhoto || "";
+
+  if (settingsLoading) {
+    return (
+      <main className="min-h-screen bg-white">
+        <section className="flex min-h-screen items-center justify-center px-6">
+          <div className="text-center">
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border-2 border-red-700 bg-white shadow-xl">
+              <span className="text-3xl font-black text-red-700">Q</span>
+            </div>
+
+            <p className="font-bold uppercase tracking-[0.25em] text-red-700">
+              Loading The QueensMen
+            </p>
+
+            <p className="mt-3 text-slate-500">Preparing the site details...</p>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="bg-white">
       {/* HERO SECTION */}
@@ -106,12 +127,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_left,_rgba(185,28,28,0.12),_transparent_35%),radial-gradient(circle_at_right,_rgba(0,0,0,0.06),_transparent_30%)]" />
 
         <div className="relative mx-auto min-h-[82vh] max-w-7xl px-6 py-20">
-          {settingsLoading && (
-            <p className="mb-4 text-sm font-bold text-slate-500">
-              Loading business settings...
-            </p>
-          )}
-
+         
           <div className="flex flex-col items-start gap-8 md:flex-row md:items-center">
             {/* LOGO */}
             <div className="flex h-56 w-40 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 border-red-700 bg-white p-3 shadow-2xl md:h-64 md:w-44">
