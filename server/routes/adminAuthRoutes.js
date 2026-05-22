@@ -430,5 +430,76 @@ router.post("/create-admin", adminProtect, async (req, res) => {
   }
 });
 
+// @route   GET /api/admin/users
+// @desc    Get all admin users
+// @access  Admin
+router.get("/users", adminProtect, async (req, res) => {
+  try {
+    const admins = await AdminUser.find()
+      .select("-password -resetPasswordToken -resetPasswordExpires")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      admins,
+    });
+  } catch (error) {
+    console.error("Get admin users error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server error while getting admin users.",
+    });
+  }
+});
+
+// @route   DELETE /api/admin/users/:id
+// @desc    Delete an admin user
+// @access  Admin
+router.delete("/users/:id", adminProtect, async (req, res) => {
+  try {
+    const adminCount = await AdminUser.countDocuments();
+
+    if (adminCount <= 1) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot delete the last admin account.",
+      });
+    }
+
+    if (String(req.admin._id) === String(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        message: "You cannot delete the admin account you are currently using.",
+      });
+    }
+
+    const admin = await AdminUser.findById(req.params.id);
+
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: "Admin account not found.",
+      });
+    }
+
+    await admin.deleteOne();
+
+    res.json({
+      success: true,
+      message: "Admin account deleted successfully.",
+      id: req.params.id,
+    });
+  } catch (error) {
+    console.error("Delete admin user error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server error while deleting admin user.",
+    });
+  }
+});
+
+
 
 export default router;

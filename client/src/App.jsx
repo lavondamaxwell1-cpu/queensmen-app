@@ -23,7 +23,7 @@ import AdminSettings from "./admin/AdminSettings";
 import AdminChangePassword from "./admin/AdminChangePassword";
 import AdminForgotPassword from "./admin/AdminForgotPassword";
 import AdminResetPassword from "./admin/AdminResetPassword";
-
+import AdminUsers from "./admin/AdminUsers";
 function AppLayout() {
   const location = useLocation();
 
@@ -129,6 +129,14 @@ function AppLayout() {
           element={
             <ProtectedAdminRoute>
               <AdminSystemCheck />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedAdminRoute>
+              <AdminUsers />
             </ProtectedAdminRoute>
           }
         />
