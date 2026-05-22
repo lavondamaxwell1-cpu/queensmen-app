@@ -82,7 +82,12 @@ app.use("/api/models", modelRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
 
-
+app.get("/api/version", (req, res) => {
+  res.json({
+    success: true,
+    version: "secure-admin-route-2026-05-22",
+  });
+});
 app.get("/", (req, res) => {
   res.send("The QueensMen API is running");
 });
