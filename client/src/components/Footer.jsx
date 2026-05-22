@@ -38,55 +38,72 @@ export default function Footer() {
   const facebook = settings?.facebook || "";
   const tiktok = settings?.tiktok || "";
   const tagline = settings?.tagline || "Exclusive Professional Male Models";
+  const logo = settings?.logo || "";
 
   return (
-    <footer className="border-t border-red-900/40 bg-black text-white">
+    <footer className="border-t border-slate-200 bg-white text-black">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-4">
         {/* BRAND */}
         <div className="md:col-span-1">
-          <h2 className="text-2xl font-black">
-            {businessName === "The QueensMen" ? (
-              <>
-                The <span className="text-red-700">Queens</span>Men
-              </>
+          <Link to="/" className="flex items-center gap-3">
+            {logo ? (
+              <div className="flex h-16 w-28 items-center justify-center overflow-hidden rounded-xl border border-red-700 bg-white p-1 shadow-sm">
+                <img
+                  src={logo}
+                  alt={`${businessName} logo`}
+                  className="h-full w-full object-contain"
+                />
+              </div>
             ) : (
-              businessName
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-red-700 bg-white shadow-sm">
+                <span className="text-lg font-black text-red-700">Q</span>
+              </div>
             )}
-          </h2>
 
-          <p className="mt-4 text-sm leading-6 text-slate-400">{tagline}</p>
+            <h2 className="text-xl font-black">
+              {businessName === "The QueensMen" ? (
+                <>
+                  The <span className="text-red-700">Q</span>ueensMen
+                </>
+              ) : (
+                businessName
+              )}
+            </h2>
+          </Link>
 
-          <p className="mt-4 text-sm leading-6 text-slate-400">
+          <p className="mt-4 text-sm leading-6 text-slate-600">{tagline}</p>
+
+          <p className="mt-4 text-sm font-bold text-slate-700">
             Classy. Vintage. Bold.
           </p>
         </div>
 
         {/* QUICK LINKS */}
         <div>
-          <h3 className="text-sm font-black uppercase tracking-[0.2em] text-red-600">
+          <h3 className="text-sm font-black uppercase tracking-[0.2em] text-red-700">
             Quick Links
           </h3>
 
-          <div className="mt-4 grid gap-3 text-sm font-semibold text-slate-300">
-            <Link to="/" className="hover:text-red-500">
+          <div className="mt-4 grid gap-3 text-sm font-bold text-slate-700">
+            <Link to="/" className="hover:text-red-700">
               Home
             </Link>
-            <Link to="/about" className="hover:text-red-500">
+            <Link to="/about" className="hover:text-red-700">
               About
             </Link>
-            <Link to="/models" className="hover:text-red-500">
+            <Link to="/models" className="hover:text-red-700">
               Models
             </Link>
-            <Link to="/flyers" className="hover:text-red-500">
+            <Link to="/flyers" className="hover:text-red-700">
               Flyers
             </Link>
-            <Link to="/apply" className="hover:text-red-500">
+            <Link to="/apply" className="hover:text-red-700">
               Apply
             </Link>
-            <Link to="/book" className="hover:text-red-500">
+            <Link to="/book" className="hover:text-red-700">
               Book
             </Link>
-            <Link to="/contact" className="hover:text-red-500">
+            <Link to="/contact" className="hover:text-red-700">
               Contact
             </Link>
           </div>
@@ -94,11 +111,11 @@ export default function Footer() {
 
         {/* SERVICES */}
         <div>
-          <h3 className="text-sm font-black uppercase tracking-[0.2em] text-red-600">
+          <h3 className="text-sm font-black uppercase tracking-[0.2em] text-red-700">
             Services
           </h3>
 
-          <div className="mt-4 grid gap-3 text-sm font-semibold text-slate-300">
+          <div className="mt-4 grid gap-3 text-sm font-bold text-slate-700">
             <p>Fashion Shows</p>
             <p>Photoshoots</p>
             <p>Brand Campaigns</p>
@@ -109,19 +126,19 @@ export default function Footer() {
 
         {/* CONTACT */}
         <div>
-          <h3 className="text-sm font-black uppercase tracking-[0.2em] text-red-600">
+          <h3 className="text-sm font-black uppercase tracking-[0.2em] text-red-700">
             Contact
           </h3>
 
-          <div className="mt-4 grid gap-3 text-sm font-semibold text-slate-300">
+          <div className="mt-4 grid gap-3 text-sm font-bold text-slate-700">
             <a
               href={`tel:${phone.replace(/\D/g, "")}`}
-              className="hover:text-red-500"
+              className="hover:text-red-700"
             >
               {phone}
             </a>
 
-            <a href={`mailto:${email}`} className="hover:text-red-500">
+            <a href={`mailto:${email}`} className="hover:text-red-700">
               {email}
             </a>
 
@@ -131,7 +148,7 @@ export default function Footer() {
                   href={instagram}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-full border border-white/20 px-4 py-2 text-xs font-black text-white hover:bg-red-700"
+                  className="rounded-full border border-slate-300 px-4 py-2 text-xs font-black text-black hover:border-red-700 hover:bg-red-700 hover:text-white"
                 >
                   Instagram
                 </a>
@@ -142,7 +159,7 @@ export default function Footer() {
                   href={facebook}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-full border border-white/20 px-4 py-2 text-xs font-black text-white hover:bg-red-700"
+                  className="rounded-full border border-slate-300 px-4 py-2 text-xs font-black text-black hover:border-red-700 hover:bg-red-700 hover:text-white"
                 >
                   Facebook
                 </a>
@@ -153,7 +170,7 @@ export default function Footer() {
                   href={tiktok}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-full border border-white/20 px-4 py-2 text-xs font-black text-white hover:bg-red-700"
+                  className="rounded-full border border-slate-300 px-4 py-2 text-xs font-black text-black hover:border-red-700 hover:bg-red-700 hover:text-white"
                 >
                   TikTok
                 </a>
@@ -163,7 +180,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-white/10 px-6 py-5 text-center text-sm font-semibold text-slate-500">
+      <div className="border-t border-slate-200 px-6 py-5 text-center text-sm font-semibold text-slate-500">
         © {new Date().getFullYear()} {businessName}. All rights reserved.
       </div>
     </footer>
