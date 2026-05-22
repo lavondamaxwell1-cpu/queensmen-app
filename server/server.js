@@ -20,8 +20,34 @@ connectDB();
 const app = express();
 
 // CORS must be BEFORE routes
-const allowedOrigins = ["http://localhost:5173", process.env.CLIENT_URL];
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://queensmen-app.vercel.app",
+  process.env.CLIENT_URL,
+];
 
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      const isAllowedOrigin = allowedOrigins.includes(origin);
+
+      const isVercelPreview =
+        origin.endsWith(".vercel.app") &&
+        origin.includes("lavondamaxwell1-cpus-projects");
+
+      if (isAllowedOrigin || isVercelPreview) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`Not allowed by CORS: ${origin}`));
+    },
+    credentials: true,
+  }),
+);
 app.use(
   cors({
     origin: function (origin, callback) {
