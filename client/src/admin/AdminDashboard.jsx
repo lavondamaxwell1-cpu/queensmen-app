@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import API from "../api/api";
 import AdminNavbar from "../components/AdminNavbar";
 
 export default function AdminDashboard() {
-  const navigate = useNavigate();
-
   const [stats, setStats] = useState({
     totalApplications: 0,
     pendingApplications: 0,
@@ -58,12 +56,6 @@ export default function AdminDashboard() {
     };
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("adminToken");
-    localStorage.removeItem("adminUser");
-    navigate("/admin/login");
-  };
-
   const cards = [
     {
       title: "Applications",
@@ -87,14 +79,14 @@ export default function AdminDashboard() {
       link: "/admin/messages",
     },
     {
-      title: "Models",
+      title: "Active Models",
       total: stats.activeModels || 0,
       attention: null,
       attentionLabel: "Active",
       link: "/admin/models",
     },
     {
-      title: "Flyers",
+      title: "Active Flyers",
       total: stats.activeFlyers || 0,
       attention: null,
       attentionLabel: "Active",
@@ -102,45 +94,79 @@ export default function AdminDashboard() {
     },
   ];
 
+  const quickActions = [
+    {
+      title: "Add or Edit Models",
+      description:
+        "Create profiles, upload photos, feature models, and manage portfolios.",
+      link: "/admin/models",
+      button: "Manage Models",
+    },
+    {
+      title: "Upload Flyers",
+      description:
+        "Add finished flyer designs, tour dates, event details, and announcements.",
+      link: "/admin/flyers",
+      button: "Manage Flyers",
+    },
+    {
+      title: "Review Requests",
+      description:
+        "Check new applications, bookings, and messages that need follow-up.",
+      link: "/admin/applications",
+      button: "Review Applications",
+    },
+    {
+      title: "Business Settings",
+      description:
+        "Update logo, owner photo, phone, email, socials, and homepage wording.",
+      link: "/admin/settings",
+      button: "Edit Settings",
+    },
+  ];
+
   return (
     <>
       <AdminNavbar />
 
-      <main className="min-h-screen bg-black px-6 py-16 text-white">
+      <main className="min-h-screen bg-slate-50 px-6 py-16 text-black">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div>
-              <p className="font-bold uppercase tracking-[0.25em] text-red-600">
-                Admin Dashboard
-              </p>
+          {/* HEADER */}
+          <section className="mb-10 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-xl">
+            <p className="font-bold uppercase tracking-[0.25em] text-red-700">
+              Admin Dashboard
+            </p>
 
-              <h1 className="mt-4 text-4xl font-black md:text-5xl">
-                Welcome back
-                {adminUser?.name ? (
-                  <span className="text-red-700">, {adminUser.name}</span>
-                ) : (
-                  <span className="text-red-700">, Admin</span>
-                )}
-              </h1>
+            <div className="mt-4 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+              <div>
+                <h1 className="text-4xl font-black text-slate-950 md:text-5xl">
+                  Welcome back
+                  {adminUser?.name ? (
+                    <span className="text-red-700">, {adminUser.name}</span>
+                  ) : (
+                    <span className="text-red-700">, Admin</span>
+                  )}
+                </h1>
 
-              <p className="mt-4 max-w-2xl text-slate-300">
-                Manage model profiles, flyers, applications, bookings, messages,
-                and business settings.
-              </p>
+                <p className="mt-4 max-w-2xl text-slate-600">
+                  Manage model profiles, flyers, applications, bookings,
+                  messages, business settings, images, and site content.
+                </p>
+              </div>
+
+              <Link
+                to="/"
+                className="w-fit rounded-full bg-black px-6 py-3 font-black text-white shadow hover:bg-red-700"
+              >
+                View Public Site
+              </Link>
             </div>
+          </section>
 
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="w-fit rounded-full border border-red-700 px-6 py-3 font-black text-red-500 hover:bg-red-700 hover:text-white"
-            >
-              Logout
-            </button>
-          </div>
-
+          {/* LOADING / ERROR */}
           {loading && (
-            <div className="mb-8 rounded-3xl border border-red-900/40 bg-white/5 p-6 text-center">
-              <p className="font-bold text-slate-300">
+            <div className="mb-8 rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+              <p className="font-bold text-slate-600">
                 Loading dashboard stats...
               </p>
             </div>
@@ -152,12 +178,13 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {/* STATS */}
           <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
             {cards.map((card) => (
               <Link
                 key={card.title}
                 to={card.link}
-                className="rounded-3xl border border-red-900/40 bg-white p-6 text-black shadow-2xl transition hover:-translate-y-1 hover:shadow-red-950/30"
+                className="rounded-3xl border border-slate-200 bg-white p-6 text-black shadow-lg transition hover:-translate-y-1 hover:shadow-2xl"
               >
                 <p className="text-sm font-black uppercase tracking-[0.2em] text-red-700">
                   {card.title}
@@ -168,13 +195,14 @@ export default function AdminDashboard() {
                     <p className="text-5xl font-black text-slate-950">
                       {card.total}
                     </p>
+
                     <p className="mt-1 text-sm font-bold text-slate-500">
                       Total / Active
                     </p>
                   </div>
 
                   {card.attention !== null && (
-                    <div className="rounded-2xl bg-red-50 px-4 py-3 text-center">
+                    <div className="rounded-2xl bg-red-50 px-4 py-3 text-center ring-1 ring-red-100">
                       <p className="text-2xl font-black text-red-700">
                         {card.attention}
                       </p>
@@ -188,39 +216,87 @@ export default function AdminDashboard() {
             ))}
           </section>
 
+          {/* ATTENTION */}
           <section className="mt-10 grid gap-6 lg:grid-cols-3">
             <Link
-              to="/admin/models"
-              className="rounded-3xl border border-red-900/40 bg-white/5 p-8 shadow-2xl hover:bg-white/10"
+              to="/admin/applications"
+              className="rounded-3xl border border-slate-200 bg-white p-8 shadow-lg hover:shadow-2xl"
             >
-              <h2 className="text-2xl font-black text-white">Manage Models</h2>
-              <p className="mt-3 text-slate-300">
-                Add, edit, feature, hide, or delete model profiles.
+              <p className="font-bold uppercase tracking-[0.2em] text-red-700">
+                Applications
               </p>
-            </Link>
-
-            <Link
-              to="/admin/flyers"
-              className="rounded-3xl border border-red-900/40 bg-white/5 p-8 shadow-2xl hover:bg-white/10"
-            >
-              <h2 className="text-2xl font-black text-white">Manage Flyers</h2>
-              <p className="mt-3 text-slate-300">
-                Upload finished flyers, create tour dates, and manage events.
-              </p>
-            </Link>
-
-            <Link
-              to="/admin/settings"
-              className="rounded-3xl border border-red-900/40 bg-white/5 p-8 shadow-2xl hover:bg-white/10"
-            >
-              <h2 className="text-2xl font-black text-white">
-                Business Settings
+              <h2 className="mt-3 text-3xl font-black text-slate-950">
+                {stats.pendingApplications || 0} Pending
               </h2>
-              <p className="mt-3 text-slate-300">
-                Update logo, owner photo, phone, email, socials, and homepage
-                text.
+              <p className="mt-3 text-slate-600">
+                Review new model applications and update applicant statuses.
               </p>
             </Link>
+
+            <Link
+              to="/admin/bookings"
+              className="rounded-3xl border border-slate-200 bg-white p-8 shadow-lg hover:shadow-2xl"
+            >
+              <p className="font-bold uppercase tracking-[0.2em] text-red-700">
+                Bookings
+              </p>
+              <h2 className="mt-3 text-3xl font-black text-slate-950">
+                {stats.pendingBookings || 0} Pending
+              </h2>
+              <p className="mt-3 text-slate-600">
+                Review booking requests and send status updates to clients.
+              </p>
+            </Link>
+
+            <Link
+              to="/admin/messages"
+              className="rounded-3xl border border-slate-200 bg-white p-8 shadow-lg hover:shadow-2xl"
+            >
+              <p className="font-bold uppercase tracking-[0.2em] text-red-700">
+                Messages
+              </p>
+              <h2 className="mt-3 text-3xl font-black text-slate-950">
+                {stats.unreadMessages || 0} Unread
+              </h2>
+              <p className="mt-3 text-slate-600">
+                Check contact messages and follow up with visitors.
+              </p>
+            </Link>
+          </section>
+
+          {/* QUICK ACTIONS */}
+          <section className="mt-10">
+            <div className="mb-6">
+              <p className="font-bold uppercase tracking-[0.25em] text-red-700">
+                Quick Actions
+              </p>
+
+              <h2 className="mt-3 text-4xl font-black text-slate-950">
+                Manage the site faster.
+              </h2>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              {quickActions.map((action) => (
+                <Link
+                  key={action.title}
+                  to={action.link}
+                  className="rounded-3xl border border-slate-200 bg-white p-8 shadow-lg transition hover:-translate-y-1 hover:shadow-2xl"
+                >
+                  <h3 className="text-2xl font-black text-slate-950">
+                    {action.title}
+                  </h3>
+
+                  <p className="mt-3 leading-7 text-slate-600">
+                    {action.description}
+                  </p>
+
+                  <span className="mt-6 inline-flex rounded-full bg-red-700 px-5 py-3 text-sm font-black text-white hover:bg-red-800">
+                    {action.button}
+                  </span>
+                </Link>
+              ))}
+            </div>
           </section>
         </div>
       </main>
