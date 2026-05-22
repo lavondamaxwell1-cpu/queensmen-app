@@ -372,4 +372,63 @@ router.put("/reset-password/:token", async (req, res) => {
   }
 });
 
+// @route   POST /api/admin/create-admin
+// @desc    Create another admin account
+// @access  Admin
+router.post("/create-admin", adminProtect, async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide name, email, and password.",
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters.",
+      });
+    }
+
+    const existingAdmin = await AdminUser.findOne({ email });
+
+    if (existingAdmin) {
+      return res.status(400).json({
+        success: false,
+        message: "An admin with this email already exists.",
+      });
+    }
+
+    // Do not manually hash. AdminUser model pre-save hook hashes it.
+    const admin = await AdminUser.create({
+      name,
+      email,
+      password,
+      role: "admin",
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Admin account created successfully.",
+      admin: {
+        id: admin._id,
+        name: admin.name,
+        email: admin.email,
+        role: admin.role,
+      },
+    });
+  } catch (error) {
+    console.error("Create admin error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server error while creating admin account.",
+    });
+  }
+});
+
+
 export default router;
