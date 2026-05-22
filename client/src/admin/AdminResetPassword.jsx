@@ -1,19 +1,21 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import API from "../api/api";
 
-export default function AdminLogin() {
-  const navigate = useNavigate();
+export default function AdminResetPassword() {
+  const { token } = useParams();
 
   const [formData, setFormData] = useState({
-    email: "",
     password: "",
+    confirmPassword: "",
   });
 
   const [settings, setSettings] = useState(null);
   const [settingsLoading, setSettingsLoading] = useState(true);
+  const [showPasswords, setShowPasswords] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   useEffect(() => {
     let ignore = false;
@@ -28,7 +30,7 @@ export default function AdminLogin() {
           setSettings(data.settings || null);
         }
       } catch (error) {
-        console.error("Fetch admin login settings error:", error);
+        console.error("Fetch reset password settings error:", error);
 
         if (!ignore) {
           setSettings(null);
@@ -60,34 +62,56 @@ export default function AdminLogin() {
     }));
   };
 
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
       setLoading(true);
       setError("");
+      setSuccess("");
 
-      const { data } = await API.post("/api/admin/login", formData);
+      const { data } = await API.put(
+        `/api/admin/reset-password/${token}`,
+        formData,
+      );
 
-      localStorage.setItem("adminToken", data.token);
-      localStorage.setItem("adminUser", JSON.stringify(data.admin));
+      setSuccess(data.message || "Password reset successfully.");
 
-      navigate("/admin");
+      setFormData({
+        password: "",
+        confirmPassword: "",
+      });
     } catch (error) {
-      console.error("Admin login error:", error);
+      console.error("Reset password error:", error);
 
       setError(
         error.response?.data?.message ||
-          "Login failed. Please check your email and password.",
+          "Something went wrong while resetting password.",
       );
-
-      setTimeout(() => {
-        setError("");
-      }, 5000);
     } finally {
       setLoading(false);
     }
   };
+
+  if (settingsLoading) {
+    return (
+      <main className="min-h-screen bg-slate-50">
+        <section className="flex min-h-screen items-center justify-center px-6">
+          <div className="text-center">
+            <div className="mx-auto mb-6 flex h-24 w-36 items-center justify-center rounded-2xl border-2 border-red-700 bg-white p-2 shadow-xl">
+              <span className="text-3xl font-black text-red-700">Q</span>
+            </div>
+
+            <p className="font-bold uppercase tracking-[0.25em] text-red-700">
+              Loading Reset Page
+            </p>
+
+            <p className="mt-3 text-slate-500">Preparing password reset...</p>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-slate-50 text-black">
@@ -95,9 +119,7 @@ export default function AdminLogin() {
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
             <div className="mx-auto mb-5 flex h-28 w-40 items-center justify-center overflow-hidden rounded-2xl border-2 border-red-700 bg-white p-2 shadow-xl">
-              {settingsLoading ? (
-                <span className="text-3xl font-black text-red-700">Q</span>
-              ) : logo ? (
+              {logo ? (
                 <img
                   src={logo}
                   alt={`${businessName} logo`}
@@ -109,79 +131,81 @@ export default function AdminLogin() {
             </div>
 
             <p className="font-bold uppercase tracking-[0.25em] text-red-700">
-              Admin Login
+              Admin Password
             </p>
 
             <h1 className="mt-3 text-4xl font-black text-slate-950">
-              {businessName === "The QueensMen" ? (
-                <>
-                  The <span className="text-red-700">Q</span>ueensMen
-                </>
-              ) : (
-                businessName
-              )}
+              Reset Password
             </h1>
 
-            <p className="mt-3 text-sm font-semibold text-slate-500">
+            <p className="mt-3 text-sm font-semibold leading-6 text-slate-500">
               {tagline}
             </p>
           </div>
 
           <form
-            onSubmit={handleLogin}
+            onSubmit={handleSubmit}
             className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-2xl"
           >
-            <h2 className="text-3xl font-black text-slate-950">Sign in</h2>
-
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              Enter your admin email and password to manage the website.
+            <p className="mb-5 text-sm font-semibold leading-6 text-slate-600">
+              Enter and confirm your new admin password.
             </p>
 
-            <div className="mt-7 grid gap-5">
+            <div className="grid gap-5">
               <div>
                 <label className="mb-2 block text-sm font-bold text-slate-700">
-                  Admin Email
+                  New Password
                 </label>
 
                 <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  autoComplete="email"
-                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-red-700"
-                  placeholder="owner@example.com"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-bold text-slate-700">
-                  Password
-                </label>
-
-                <input
-                  type="password"
+                  type={showPasswords ? "text" : "password"}
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
                   required
-                  autoComplete="current-password"
+                  minLength="6"
+                  autoComplete="new-password"
                   className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-red-700"
-                  placeholder="Enter password"
+                  placeholder="New password"
                 />
-                <Link
-                  to="/admin/forgot-password"
-                  className="mt-4 block text-right text-sm font-black text-red-700 hover:text-red-800"
-                >
-                  Forgot password?
-                </Link>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-700">
+                  Confirm Password
+                </label>
+
+                <input
+                  type={showPasswords ? "text" : "password"}
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                  minLength="6"
+                  autoComplete="new-password"
+                  className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-red-700"
+                  placeholder="Confirm password"
+                />
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setShowPasswords((prev) => !prev)}
+              className="mt-4 rounded-full border border-slate-300 px-5 py-2 text-sm font-black text-slate-900 hover:border-black hover:bg-black hover:text-white"
+            >
+              {showPasswords ? "Hide Passwords" : "Show Passwords"}
+            </button>
 
             {error && (
               <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
                 {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="mt-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-bold text-green-700">
+                {success}
               </div>
             )}
 
@@ -190,20 +214,21 @@ export default function AdminLogin() {
               disabled={loading}
               className="mt-6 w-full rounded-full bg-red-700 px-6 py-4 font-black text-white shadow-lg hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loading ? "Signing in..." : "Login to Dashboard"}
+              {loading ? "Resetting Password..." : "Reset Password"}
             </button>
 
-            <button
-              type="button"
-              onClick={() => navigate("/")}
-              className="mt-4 w-full rounded-full border border-slate-300 px-6 py-3 font-black text-slate-950 hover:border-black hover:bg-black hover:text-white"
-            >
-              Back to Website
-            </button>
+            {success && (
+              <Link
+                to="/admin/login"
+                className="mt-4 block w-full rounded-full border border-slate-300 px-6 py-3 text-center font-black text-slate-950 hover:border-black hover:bg-black hover:text-white"
+              >
+                Back to Login
+              </Link>
+            )}
           </form>
 
           <p className="mt-6 text-center text-xs font-semibold text-slate-500">
-            Authorized admin access only.
+            {businessName} admin recovery.
           </p>
         </div>
       </section>

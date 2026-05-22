@@ -21,7 +21,8 @@ import AdminModels from "./admin/AdminModels";
 import AdminFlyers from "./admin/AdminFlyers";
 import AdminSettings from "./admin/AdminSettings";
 import AdminChangePassword from "./admin/AdminChangePassword";
-
+import AdminForgotPassword from "./admin/AdminForgotPassword";
+import AdminResetPassword from "./admin/AdminResetPassword";
 
 function AppLayout() {
   const location = useLocation();
@@ -42,7 +43,14 @@ function AppLayout() {
         <Route path="/apply" element={<Apply />} />
         <Route path="/book" element={<BookModel />} />
         <Route path="/contact" element={<Contact />} />
-
+        <Route
+          path="/admin/forgot-password"
+          element={<AdminForgotPassword />}
+        />
+        <Route
+          path="/admin/reset-password/:token"
+          element={<AdminResetPassword />}
+        />
         {/* ADMIN LOGIN */}
         <Route path="/admin/login" element={<AdminLogin />} />
 
@@ -116,14 +124,14 @@ function AppLayout() {
             </ProtectedAdminRoute>
           }
         />
-<Route
-  path="/admin/system-check"
-  element={
-    <ProtectedAdminRoute>
-      <AdminSystemCheck />
-    </ProtectedAdminRoute>
-  }
-/>
+        <Route
+          path="/admin/system-check"
+          element={
+            <ProtectedAdminRoute>
+              <AdminSystemCheck />
+            </ProtectedAdminRoute>
+          }
+        />
       </Routes>
 
       {!isAdminPage && <Footer />}

@@ -1,8 +1,12 @@
 import express from "express";
 import jwt from "jsonwebtoken";
-import AdminUser from "../models/AdminUser.js";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
+
+import AdminUser from "../models/AdminUser.js";
 import adminProtect from "../middleware/adminProtect.js";
+import sendEmail from "../utils/sendEmail.js";
+
 const router = express.Router();
 
 const generateToken = (id) => {
@@ -63,7 +67,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-/// @route   POST /api/admin/create-first-admin
+// @route   POST /api/admin/create-first-admin
 // @desc    Create the first admin only if no admin exists
 // @access  Public, but locked after first admin
 router.post("/create-first-admin", async (req, res) => {
@@ -102,13 +106,12 @@ router.post("/create-first-admin", async (req, res) => {
       });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
+    // Do not manually hash here.
+    // AdminUser model pre-save hook will hash the password.
     const admin = await AdminUser.create({
       name,
       email,
-      password: hashedPassword,
+      password,
       role: "admin",
     });
 
@@ -132,7 +135,7 @@ router.post("/create-first-admin", async (req, res) => {
   }
 });
 
-/// @route   PUT /api/admin/change-password
+// @route   PUT /api/admin/change-password
 // @desc    Change logged-in admin password
 // @access  Admin
 router.put("/change-password", adminProtect, async (req, res) => {
@@ -178,8 +181,9 @@ router.put("/change-password", adminProtect, async (req, res) => {
       });
     }
 
-    const salt = await bcrypt.genSalt(10);
-    admin.password = await bcrypt.hash(newPassword, salt);
+    // Do not manually hash here.
+    // AdminUser model pre-save hook will hash it.
+    admin.password = newPassword;
 
     await admin.save();
 
@@ -196,4 +200,176 @@ router.put("/change-password", adminProtect, async (req, res) => {
     });
   }
 });
+
+// @route   POST /api/admin/forgot-password
+// @desc    Send admin password reset email
+// @access  Public
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter your admin email.",
+      });
+    }
+
+    const admin = await AdminUser.findOne({ email });
+
+    // Do not reveal whether the email exists.
+    if (!admin) {
+      return res.json({
+        success: true,
+        message:
+          "If an admin account exists for that email, a reset link has been sent.",
+      });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+
+    admin.resetPasswordToken = hashedToken;
+    admin.resetPasswordExpires = Date.now() + 15 * 60 * 1000;
+
+    await admin.save();
+
+    const clientUrl = process.env.CLIENT_URL || "http://localhost:5173";
+    const resetUrl = `${clientUrl}/admin/reset-password/${resetToken}`;
+
+    try {
+      await sendEmail({
+        to: admin.email,
+        subject: "Reset your QueensMen admin password",
+        html: `
+          <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+            <h2>Password Reset Request</h2>
+
+            <p>Hi ${admin.name},</p>
+
+            <p>
+              A password reset was requested for your QueensMen admin account.
+              Click the button below to reset your password.
+            </p>
+
+            <p>
+              <a
+                href="${resetUrl}"
+                style="display:inline-block;background:#b91c1c;color:#ffffff;padding:12px 18px;border-radius:999px;text-decoration:none;font-weight:bold;"
+              >
+                Reset Password
+              </a>
+            </p>
+
+            <p>
+              This link expires in 15 minutes. If you did not request this,
+              you can ignore this email.
+            </p>
+
+            <p style="margin-top: 24px;">
+              Thank you,<br />
+              <strong>The QueensMen Team</strong>
+            </p>
+          </div>
+        `,
+      });
+    } catch (emailError) {
+      console.error("Forgot password email failed:", emailError);
+
+      admin.resetPasswordToken = undefined;
+      admin.resetPasswordExpires = undefined;
+      await admin.save();
+
+      return res.status(500).json({
+        success: false,
+        message: "Reset email could not be sent. Please try again.",
+      });
+    }
+
+    res.json({
+      success: true,
+      message:
+        "If an admin account exists for that email, a reset link has been sent.",
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server error while requesting password reset.",
+    });
+  }
+});
+
+// @route   PUT /api/admin/reset-password/:token
+// @desc    Reset admin password with token
+// @access  Public
+router.put("/reset-password/:token", async (req, res) => {
+  try {
+    const { password, confirmPassword } = req.body;
+
+    if (!password || !confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Please fill in both password fields.",
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Password and confirm password do not match.",
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Password must be at least 6 characters.",
+      });
+    }
+
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(req.params.token)
+      .digest("hex");
+
+    const admin = await AdminUser.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!admin) {
+      return res.status(400).json({
+        success: false,
+        message: "Password reset link is invalid or expired.",
+      });
+    }
+
+    // Do not manually hash here.
+    // AdminUser model pre-save hook will hash it.
+    admin.password = password;
+    admin.resetPasswordToken = undefined;
+    admin.resetPasswordExpires = undefined;
+
+    await admin.save();
+
+    res.json({
+      success: true,
+      message: "Password reset successfully. You can now log in.",
+    });
+  } catch (error) {
+    console.error("Reset password error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server error while resetting password.",
+    });
+  }
+});
+
 export default router;
