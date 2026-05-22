@@ -1,7 +1,39 @@
+import { useEffect, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
+import API from "../api/api";
 
 export default function AdminNavbar() {
   const navigate = useNavigate();
+  const [settings, setSettings] = useState(null);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const fetchSettings = async () => {
+      try {
+        const { data } = await API.get("/api/settings");
+
+        if (!ignore) {
+          setSettings(data.settings || null);
+        }
+      } catch (error) {
+        console.error("Fetch admin navbar settings error:", error);
+
+        if (!ignore) {
+          setSettings(null);
+        }
+      }
+    };
+
+    fetchSettings();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const businessName = settings?.businessName || "The QueensMen";
+  const logo = settings?.logo || "";
 
   const handleLogout = () => {
     localStorage.removeItem("adminToken");
@@ -19,14 +51,31 @@ export default function AdminNavbar() {
       <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-4 xl:flex-row xl:items-center xl:justify-between">
         {/* BRAND */}
         <Link to="/admin" className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-red-700 bg-white shadow-sm">
-            <span className="text-xl font-black text-red-700">Q</span>
-          </div>
+          {logo ? (
+            <div className="flex h-14 w-24 items-center justify-center overflow-hidden rounded-xl border border-red-700 bg-white p-1 shadow-sm">
+              <img
+                src={logo}
+                alt={`${businessName} logo`}
+                className="h-full w-full object-contain"
+              />
+            </div>
+          ) : (
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-red-700 bg-white shadow-sm">
+              <span className="text-xl font-black text-red-700">Q</span>
+            </div>
+          )}
 
           <div>
             <p className="text-xl font-black leading-tight">
-              The <span className="text-red-700">Q</span>ueensMen
+              {businessName === "The QueensMen" ? (
+                <>
+                  The <span className="text-red-700">Q</span>ueensMen
+                </>
+              ) : (
+                businessName
+              )}
             </p>
+
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">
               Admin Panel
             </p>
