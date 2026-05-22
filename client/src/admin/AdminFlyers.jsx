@@ -1,10 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import API from "../api/api";
 import ImageUpload from "../components/ImageUpload";
 import AdminNavbar from "../components/AdminNavbar";
-
-
 
 export default function AdminFlyers() {
   const [flyers, setFlyers] = useState([]);
@@ -29,9 +26,9 @@ export default function AdminFlyers() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
     let ignore = false;
@@ -68,6 +65,25 @@ export default function AdminFlyers() {
       ignore = true;
     };
   }, []);
+
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      type: "",
+      date: "",
+      location: "",
+      tourDates: [],
+      description: "",
+      image: "",
+      isActive: true,
+    });
+
+    setTourStop({
+      city: "",
+      date: "",
+      venue: "",
+    });
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -111,40 +127,24 @@ export default function AdminFlyers() {
       tourDates: prev.tourDates.filter((_, index) => index !== indexToRemove),
     }));
   };
-const handleSubmitFlyer = async (e) => {
-  e.preventDefault();
 
-  try {
-    setCreating(true);
-    setError("");
-    setSuccess("");
-
-    if (editingId) {
-      const { data } = await API.put(`/api/flyers/${editingId}`, formData);
-
-      setFlyers((prev) =>
-        prev.map((flyer) => (flyer._id === editingId ? data.flyer : flyer)),
-      );
-
-      setSuccess("Flyer updated successfully!");
-      setEditingId(null);
-    } else {
-      const { data } = await API.post("/api/flyers", formData);
-
-      setFlyers((prev) => [data.flyer, ...prev]);
-
-      setSuccess("Flyer created successfully!");
-    }
+  const startEdit = (flyer) => {
+    setEditingId(flyer._id);
 
     setFormData({
-      title: "",
-      type: "",
-      date: "",
-      location: "",
-      tourDates: [],
-      description: "",
-      image: "",
-      isActive: true,
+      title: flyer.title || "",
+      type: flyer.type || "",
+      date: flyer.date ? flyer.date.slice(0, 10) : "",
+      location: flyer.location || "",
+      tourDates:
+        flyer.tourDates?.map((stop) => ({
+          city: stop.city || "",
+          date: stop.date ? stop.date.slice(0, 10) : "",
+          venue: stop.venue || "",
+        })) || [],
+      description: flyer.description || "",
+      image: flyer.image || "",
+      isActive: flyer.isActive ?? true,
     });
 
     setTourStop({
@@ -152,17 +152,68 @@ const handleSubmitFlyer = async (e) => {
       date: "",
       venue: "",
     });
-  } catch (error) {
-    console.error("Submit flyer error:", error);
 
-    setError(
-      error.response?.data?.message ||
-        "Something went wrong while saving the flyer.",
-    );
-  } finally {
-    setCreating(false);
-  }
-};
+    setSuccess("");
+    setError("");
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    resetForm();
+    setError("");
+    setSuccess("");
+  };
+
+  const handleSubmitFlyer = async (e) => {
+    e.preventDefault();
+
+    try {
+      setCreating(true);
+      setError("");
+      setSuccess("");
+
+      if (editingId) {
+        const { data } = await API.put(`/api/flyers/${editingId}`, formData);
+
+        setFlyers((prev) =>
+          prev.map((flyer) => (flyer._id === editingId ? data.flyer : flyer)),
+        );
+
+        setSuccess("Flyer updated successfully!");
+        setEditingId(null);
+      } else {
+        const { data } = await API.post("/api/flyers", formData);
+
+        setFlyers((prev) => [data.flyer, ...prev]);
+
+        setSuccess("Flyer created successfully!");
+      }
+
+      resetForm();
+
+      setTimeout(() => {
+        setSuccess("");
+      }, 5000);
+    } catch (error) {
+      console.error("Submit flyer error:", error);
+
+      setError(
+        error.response?.data?.message ||
+          "Something went wrong while saving the flyer.",
+      );
+
+      setTimeout(() => {
+        setError("");
+      }, 5000);
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const handleDelete = async (flyerId) => {
     const confirmDelete = window.confirm(
@@ -188,104 +239,59 @@ const handleSubmitFlyer = async (e) => {
       setDeletingId(null);
     }
   };
-const startEdit = (flyer) => {
-  setEditingId(flyer._id);
 
-  setFormData({
-    title: flyer.title || "",
-    type: flyer.type || "",
-    date: flyer.date ? flyer.date.slice(0, 10) : "",
-    location: flyer.location || "",
-    tourDates:
-      flyer.tourDates?.map((stop) => ({
-        city: stop.city || "",
-        date: stop.date ? stop.date.slice(0, 10) : "",
-        venue: stop.venue || "",
-      })) || [],
-    description: flyer.description || "",
-    image: flyer.image || "",
-    isActive: flyer.isActive ?? true,
-  });
-
-  setSuccess("");
-  setError("");
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth",
-  });
-};
-
-const cancelEdit = () => {
-  setEditingId(null);
-
-  setFormData({
-    title: "",
-    type: "",
-    date: "",
-    location: "",
-    tourDates: [],
-    description: "",
-    image: "",
-    isActive: true,
-  });
-
-  setTourStop({
-    city: "",
-    date: "",
-    venue: "",
-  });
-
-  setError("");
-  setSuccess("");
-};
   return (
     <>
       <AdminNavbar />
-      <main className="min-h-screen bg-black px-6 py-16 text-white">
+
+      <main className="min-h-screen bg-slate-50 px-6 py-16 text-black">
         <div className="mx-auto max-w-7xl">
-          <div className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div>
-              <Link
-                to="/admin"
-                className="font-bold text-red-600 hover:text-red-500"
-              >
-                ← Back to Dashboard
-              </Link>
+          {/* HEADER */}
+          <section className="mb-10 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-xl">
+            <p className="font-bold uppercase tracking-[0.25em] text-red-700">
+              Admin Flyers
+            </p>
 
-              <p className="mt-8 font-bold uppercase tracking-[0.25em] text-red-600">
-                Admin Flyers
-              </p>
+            <div className="mt-4 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+              <div>
+                <h1 className="text-4xl font-black text-slate-950 md:text-5xl">
+                  Manage <span className="text-red-700">Flyers</span>
+                </h1>
 
-              <h1 className="mt-4 text-4xl font-black md:text-5xl">
-                Manage <span className="text-red-700">Flyers</span>
-              </h1>
+                <p className="mt-4 max-w-2xl text-slate-600">
+                  Upload finished flyer designs, add casting calls, events,
+                  announcements, and tour dates for multiple cities.
+                </p>
+              </div>
 
-              <p className="mt-4 text-slate-300">
-                Add casting calls, events, tour dates, announcements, and
-                promotional flyers.
-              </p>
+              <div className="rounded-full border border-slate-200 bg-slate-50 px-5 py-2 text-sm font-black text-slate-800 shadow-sm">
+                {flyers.length} Total Flyers
+              </div>
             </div>
+          </section>
 
-            <div className="rounded-full border border-red-900/40 bg-white/5 px-5 py-2 text-sm font-bold text-white">
-              {flyers.length} Total
-            </div>
-          </div>
-
-          <section className="grid gap-10 lg:grid-cols-[1fr_1.3fr]">
-            {/* CREATE FORM */}
+          <section className="grid gap-10 xl:grid-cols-[1fr_1.25fr]">
+            {/* FORM */}
             <form
               onSubmit={handleSubmitFlyer}
-              className="rounded-3xl border border-red-900/40 bg-white p-6 text-black shadow-2xl"
+              className="rounded-[2rem] border border-slate-200 bg-white p-6 text-black shadow-xl"
             >
-              <h2 className="text-2xl font-black text-slate-950">
-                {editingId ? "Edit Flyer" : "Add New Flyer"}
-              </h2>
-              <p className="mt-2 text-sm text-slate-600">
-                For now, use an image URL. Later we can add real file uploads.
-              </p>
-              Upload a finished flyer image or paste an image URL.
-              <div className="mt-6 grid gap-4">
+              <div className="rounded-3xl bg-slate-50 p-5 ring-1 ring-slate-200">
+                <p className="text-sm font-black uppercase tracking-[0.2em] text-red-700">
+                  {editingId ? "Editing Mode" : "Create Mode"}
+                </p>
+
+                <h2 className="mt-2 text-3xl font-black text-slate-950">
+                  {editingId ? "Edit Flyer" : "Add New Flyer"}
+                </h2>
+
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Upload a finished flyer image or paste an image URL. Use tour
+                  dates for flyers with multiple cities or event stops.
+                </p>
+              </div>
+
+              <div className="mt-6 grid gap-5">
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-700">
                     Title *
@@ -346,8 +352,8 @@ const cancelEdit = () => {
                 </div>
 
                 {/* TOUR DATES */}
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-black uppercase tracking-widest text-red-700">
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                  <p className="text-sm font-black uppercase tracking-[0.2em] text-red-700">
                     Tour / Multiple Dates
                   </p>
 
@@ -411,14 +417,17 @@ const cancelEdit = () => {
                       {formData.tourDates.map((stop, index) => (
                         <div
                           key={`${stop.city}-${stop.date}-${index}`}
-                          className="flex flex-col justify-between gap-3 rounded-xl bg-white p-4 shadow md:flex-row md:items-center"
+                          className="flex flex-col justify-between gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200 md:flex-row md:items-center"
                         >
                           <div>
                             <p className="font-black text-slate-950">
                               {stop.city} —{" "}
-                              {new Date(stop.date).toLocaleDateString()}
+                              {stop.date
+                                ? new Date(stop.date).toLocaleDateString()
+                                : "No date"}
                             </p>
-                            <p className="text-sm text-slate-500">
+
+                            <p className="text-sm font-semibold text-slate-500">
                               {stop.venue || "No venue added"}
                             </p>
                           </div>
@@ -436,40 +445,52 @@ const cancelEdit = () => {
                   )}
                 </div>
 
-                <div className="grid gap-4">
-                  <ImageUpload
-                    label="Upload Flyer Image"
-                    onUpload={(imageUrl) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        image: imageUrl,
-                      }))
-                    }
-                  />
+                {/* IMAGE */}
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                  <p className="text-sm font-black uppercase tracking-[0.2em] text-red-700">
+                    Flyer Image
+                  </p>
 
-                  <div>
-                    <label className="mb-2 block text-sm font-bold text-slate-700">
-                      Image URL
-                    </label>
-                    <input
-                      type="url"
-                      name="image"
-                      value={formData.image}
-                      onChange={handleChange}
-                      className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-red-700"
-                      placeholder="https://..."
+                  <p className="mt-1 text-sm text-slate-600">
+                    Best format: PNG, JPG, JPEG, or WEBP. Finished flyer designs
+                    will show fully without cropping.
+                  </p>
+
+                  <div className="mt-4 grid gap-4">
+                    <ImageUpload
+                      label="Upload Flyer Image"
+                      onUpload={(imageUrl) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          image: imageUrl,
+                        }))
+                      }
                     />
-                  </div>
 
-                  {formData.image && (
-                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
-                      <img
-                        src={formData.image}
-                        alt="Flyer preview"
-                        className="h-72 w-full object-contain bg-slate-100"
+                    <div>
+                      <label className="mb-2 block text-sm font-bold text-slate-700">
+                        Image URL
+                      </label>
+                      <input
+                        type="url"
+                        name="image"
+                        value={formData.image}
+                        onChange={handleChange}
+                        className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-red-700"
+                        placeholder="https://..."
                       />
                     </div>
-                  )}
+
+                    {formData.image && (
+                      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                        <img
+                          src={formData.image}
+                          alt="Flyer preview"
+                          className="h-96 w-full bg-slate-100 object-contain"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div>
@@ -487,16 +508,18 @@ const cancelEdit = () => {
                   />
                 </div>
 
-                <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
-                  <input
-                    type="checkbox"
-                    name="isActive"
-                    checked={formData.isActive}
-                    onChange={handleChange}
-                    className="h-4 w-4"
-                  />
-                  Active/Public
-                </label>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                    <input
+                      type="checkbox"
+                      name="isActive"
+                      checked={formData.isActive}
+                      onChange={handleChange}
+                      className="h-4 w-4"
+                    />
+                    Active/Public
+                  </label>
+                </div>
 
                 {error && (
                   <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
@@ -523,11 +546,12 @@ const cancelEdit = () => {
                       ? "Update Flyer"
                       : "Create Flyer"}
                 </button>
+
                 {editingId && (
                   <button
                     type="button"
                     onClick={cancelEdit}
-                    className="rounded-full border border-slate-300 px-6 py-4 font-black text-slate-900 hover:border-red-700 hover:text-red-700"
+                    className="rounded-full border border-slate-300 px-6 py-4 font-black text-slate-900 hover:border-black hover:bg-black hover:text-white"
                   >
                     Cancel Edit
                   </button>
@@ -538,17 +562,18 @@ const cancelEdit = () => {
             {/* FLYERS LIST */}
             <section>
               {loading && (
-                <div className="rounded-3xl border border-red-900/40 bg-white/5 p-8 text-center">
-                  <p className="font-bold text-slate-300">Loading flyers...</p>
+                <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+                  <p className="font-bold text-slate-600">Loading flyers...</p>
                 </div>
               )}
 
               {!loading && flyers.length === 0 && (
-                <div className="rounded-3xl border border-red-900/40 bg-white/5 p-8 text-center">
-                  <h2 className="text-2xl font-black text-white">
+                <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+                  <h2 className="text-2xl font-black text-slate-950">
                     No flyers yet
                   </h2>
-                  <p className="mt-3 text-slate-300">
+
+                  <p className="mt-3 text-slate-600">
                     Add the first flyer using the form.
                   </p>
                 </div>
@@ -559,16 +584,16 @@ const cancelEdit = () => {
                   {flyers.map((flyer) => (
                     <article
                       key={flyer._id}
-                      className="overflow-hidden rounded-3xl border border-red-900/40 bg-white text-black shadow-2xl"
+                      className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white text-black shadow-xl"
                     >
                       {flyer.image ? (
                         <img
                           src={flyer.image}
                           alt={flyer.title}
-                          className="h-80 w-full object-contain bg-slate-100"
+                          className="h-[500px] w-full bg-slate-100 object-contain"
                         />
                       ) : (
-                        <div className="flex h-80 items-center justify-center bg-slate-100">
+                        <div className="flex h-[500px] items-center justify-center bg-slate-100">
                           <p className="font-bold text-slate-500">
                             No image added
                           </p>
@@ -616,28 +641,9 @@ const cancelEdit = () => {
                             </button>
                           </div>
                         </div>
-                        <div className="flex flex-wrap gap-3">
-                          <button
-                            type="button"
-                            onClick={() => startEdit(flyer)}
-                            className="rounded-full bg-black px-5 py-3 text-sm font-black text-white hover:bg-red-700"
-                          >
-                            Edit
-                          </button>
 
-                          <button
-                            type="button"
-                            disabled={deletingId === flyer._id}
-                            onClick={() => handleDelete(flyer._id)}
-                            className="rounded-full border border-red-700 px-5 py-3 text-sm font-black text-red-700 hover:bg-red-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            {deletingId === flyer._id
-                              ? "Deleting..."
-                              : "Delete"}
-                          </button>
-                        </div>
                         {flyer.tourDates && flyer.tourDates.length > 0 && (
-                          <div className="mt-5 rounded-2xl bg-slate-100 p-4">
+                          <div className="mt-5 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
                             <p className="text-xs font-black uppercase tracking-widest text-red-700">
                               Tour Dates
                             </p>
@@ -646,7 +652,7 @@ const cancelEdit = () => {
                               {flyer.tourDates.map((stop, index) => (
                                 <div
                                   key={`${stop.city}-${stop.date}-${index}`}
-                                  className="rounded-xl bg-white p-4"
+                                  className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200"
                                 >
                                   <p className="font-black text-slate-950">
                                     {stop.city || "City not listed"} —{" "}
@@ -656,7 +662,7 @@ const cancelEdit = () => {
                                   </p>
 
                                   {stop.venue && (
-                                    <p className="mt-1 text-sm text-slate-500">
+                                    <p className="mt-1 text-sm font-semibold text-slate-500">
                                       {stop.venue}
                                     </p>
                                   )}
@@ -666,7 +672,7 @@ const cancelEdit = () => {
                           </div>
                         )}
 
-                        <p className="mt-5 leading-7 text-slate-700">
+                        <p className="mt-5 leading-7 text-slate-600">
                           {flyer.description}
                         </p>
                       </div>
