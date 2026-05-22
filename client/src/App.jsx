@@ -20,6 +20,8 @@ import AdminMessages from "./admin/AdminMessages";
 import AdminModels from "./admin/AdminModels";
 import AdminFlyers from "./admin/AdminFlyers";
 import AdminSettings from "./admin/AdminSettings";
+import AdminChangePassword from "./admin/AdminChangePassword";
+
 
 function AppLayout() {
   const location = useLocation();
@@ -53,7 +55,14 @@ function AppLayout() {
             </ProtectedAdminRoute>
           }
         />
-
+        <Route
+          path="/admin/change-password"
+          element={
+            <ProtectedAdminRoute>
+              <AdminChangePassword />
+            </ProtectedAdminRoute>
+          }
+        />
         <Route
           path="/admin/applications"
           element={
