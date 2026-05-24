@@ -117,6 +117,26 @@ export default function AdminBookings() {
     (booking) => booking.status === "Pending",
   ).length;
 
+  const updateBookingStatus = async (id, status, adminNotes = "") => {
+    try {
+      const { data } = await API.put(`/api/bookings/${id}/status`, {
+        status,
+        adminNotes,
+      });
+
+      setBookings((prev) =>
+        prev.map((booking) => (booking._id === id ? data.booking : booking)),
+      );
+    } catch (error) {
+      console.error("Update booking status error:", error);
+
+      alert(
+        error.response?.data?.message ||
+          "Something went wrong while updating booking.",
+      );
+    }
+  };
+
   return (
     <>
       <AdminNavbar />
@@ -136,9 +156,8 @@ export default function AdminBookings() {
                 </h1>
 
                 <p className="mt-4 max-w-2xl text-slate-600">
-                  Review booking requests, update client status, and manage
-                  event details. Approved or declined clients will receive a
-                  status email.
+                  Review booking requests, update booking status, and manage
+                  client event details.
                 </p>
               </div>
 
@@ -154,19 +173,21 @@ export default function AdminBookings() {
             </div>
           </section>
 
-          {/* STATES */}
+          {/* LOADING */}
           {loading && (
             <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
               <p className="font-bold text-slate-600">Loading bookings...</p>
             </div>
           )}
 
+          {/* ERROR */}
           {error && (
             <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-red-700">
               <p className="font-bold">{error}</p>
             </div>
           )}
 
+          {/* EMPTY */}
           {!loading && !error && bookings.length === 0 && (
             <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
               <h2 className="text-2xl font-black text-slate-950">
@@ -174,13 +195,12 @@ export default function AdminBookings() {
               </h2>
 
               <p className="mt-3 text-slate-600">
-                New booking requests will show here after someone submits the
-                public booking form.
+                New booking requests will appear here.
               </p>
             </div>
           )}
 
-          {/* LIST */}
+          {/* BOOKINGS */}
           {!loading && !error && bookings.length > 0 && (
             <section className="grid gap-6">
               {bookings.map((booking) => (
@@ -189,16 +209,10 @@ export default function AdminBookings() {
                   className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-xl"
                 >
                   <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
-                    <div>
+                    {/* LEFT SIDE */}
+                    <div className="flex-1">
+                      {/* TOP INFO */}
                       <div className="flex flex-wrap items-center gap-3">
-                        <span
-                          className={`rounded-full px-4 py-2 text-xs font-black uppercase tracking-wide ring-1 ${getStatusClass(
-                            booking.status,
-                          )}`}
-                        >
-                          {booking.status || "Pending"}
-                        </span>
-
                         <span className="rounded-full bg-slate-100 px-4 py-2 text-xs font-black text-slate-600 ring-1 ring-slate-200">
                           Submitted{" "}
                           {booking.createdAt
@@ -207,14 +221,71 @@ export default function AdminBookings() {
                         </span>
                       </div>
 
+                      {/* NAME */}
                       <h2 className="mt-4 text-3xl font-black text-slate-950">
                         {booking.fullName}
                       </h2>
 
-                      <p className="mt-2 font-bold text-red-700">
+                      {/* STATUS BADGE */}
+                      <div
+                        className={`mt-3 inline-flex rounded-full px-4 py-2 text-xs font-black uppercase tracking-wide
+                        ${
+                          booking.status === "Approved"
+                            ? "bg-green-100 text-green-700"
+                            : booking.status === "Declined"
+                              ? "bg-red-100 text-red-700"
+                              : booking.status === "Completed"
+                                ? "bg-blue-100 text-blue-700"
+                                : booking.status === "Canceled"
+                                  ? "bg-gray-200 text-gray-700"
+                                  : "bg-yellow-100 text-yellow-700"
+                        }
+                      `}
+                      >
+                        {booking.status || "Pending"}
+                      </div>
+
+                      {/* STATUS SELECT */}
+                      <div className="mt-4">
+                        <select
+                          value={booking.status || "Pending"}
+                          onChange={(e) =>
+                            updateBookingStatus(
+                              booking._id,
+                              e.target.value,
+                              booking.adminNotes || "",
+                            )
+                          }
+                          className="rounded-xl border border-slate-300 bg-white px-4 py-2 font-bold outline-none focus:border-red-700"
+                        >
+                          <option value="Pending">Pending</option>
+                          <option value="Approved">Approved</option>
+                          <option value="Declined">Declined</option>
+                          <option value="Completed">Completed</option>
+                          <option value="Canceled">Canceled</option>
+                        </select>
+                      </div>
+
+                      {/* ADMIN NOTES */}
+                      <textarea
+                        value={booking.adminNotes || ""}
+                        onChange={(e) =>
+                          updateBookingStatus(
+                            booking._id,
+                            booking.status || "Pending",
+                            e.target.value,
+                          )
+                        }
+                        placeholder="Admin notes..."
+                        className="mt-4 min-h-[100px] w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none focus:border-red-700"
+                      />
+
+                      {/* EVENT TYPE */}
+                      <p className="mt-4 font-bold text-red-700">
                         {booking.eventType || "Event type not provided"}
                       </p>
 
+                      {/* COMPANY */}
                       {booking.company && (
                         <p className="mt-1 text-sm font-semibold text-slate-500">
                           Company / Brand: {booking.company}
@@ -222,21 +293,8 @@ export default function AdminBookings() {
                       )}
                     </div>
 
+                    {/* RIGHT SIDE */}
                     <div className="flex flex-wrap gap-3">
-                      <select
-                        value={booking.status || "Pending"}
-                        disabled={updatingId === booking._id}
-                        onChange={(e) =>
-                          handleStatusChange(booking._id, e.target.value)
-                        }
-                        className="rounded-full border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-900 outline-none focus:border-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="Reviewed">Reviewed</option>
-                        <option value="Approved">Approved</option>
-                        <option value="Declined">Declined</option>
-                      </select>
-
                       <button
                         type="button"
                         disabled={deletingId === booking._id}
@@ -248,6 +306,7 @@ export default function AdminBookings() {
                     </div>
                   </div>
 
+                  {/* DETAILS GRID */}
                   <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                     <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
                       <p className="text-xs font-black uppercase tracking-widest text-red-700">
@@ -301,6 +360,7 @@ export default function AdminBookings() {
                     </div>
                   </div>
 
+                  {/* SECOND GRID */}
                   <div className="mt-5 grid gap-4 md:grid-cols-2">
                     <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
                       <p className="text-xs font-black uppercase tracking-widest text-red-700">
@@ -323,6 +383,7 @@ export default function AdminBookings() {
                     </div>
                   </div>
 
+                  {/* MESSAGE */}
                   {booking.message && (
                     <div className="mt-5 rounded-2xl border-l-4 border-red-700 bg-slate-50 p-5 ring-1 ring-slate-200">
                       <p className="text-xs font-black uppercase tracking-widest text-red-700">

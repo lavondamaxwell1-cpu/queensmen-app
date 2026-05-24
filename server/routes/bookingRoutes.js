@@ -255,4 +255,46 @@ router.patch("/:id/status", adminProtect, async (req, res) => {
     });
   }
 });
+
+
+// @route   PUT /api/bookings/:id/status
+// @desc    Update booking status
+// @access  Admin
+router.put("/:id/status", adminProtect, async (req, res) => {
+  try {
+    const { status, adminNotes } = req.body;
+
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found.",
+      });
+    }
+
+    booking.status = status || booking.status;
+
+    if (adminNotes !== undefined) {
+      booking.adminNotes = adminNotes;
+    }
+
+    await booking.save();
+
+    res.json({
+      success: true,
+      message: "Booking updated successfully.",
+      booking,
+    });
+  } catch (error) {
+    console.error("Update booking status error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server error while updating booking.",
+    });
+  }
+});
+
+
 export default router;
