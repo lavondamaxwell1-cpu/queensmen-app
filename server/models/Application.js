@@ -48,6 +48,10 @@ const applicationSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    profileImage: {
+      type: String,
+      default: "",
+    },
 
     message: {
       type: String,

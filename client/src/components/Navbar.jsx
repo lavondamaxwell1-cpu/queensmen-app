@@ -166,8 +166,8 @@ export default function Navbar() {
               onClick={() => setMenuOpen(false)}
               className={({ isActive }) =>
                 isActive
-                  ? "rounded-full bg-red-700 px-5 py-3 text-center text-white"
-                  : "rounded-full bg-black px-5 py-3 text-center text-white hover:bg-red-700"
+                  ? "rounded-full bg-red-700 px-4 py-2 text-center text-sm font-black text-white transition md:px-5 md:py-3"
+                  : "rounded-full bg-black px-4 py-2 text-center text-sm font-black text-white transition hover:bg-red-700 md:px-5 md:py-3"
               }
             >
               Book

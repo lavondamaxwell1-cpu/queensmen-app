@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import API from "../api/api";
-
+import ImageUpload from "../components/ImageUpload";
 export default function Apply() {
   const [formData, setFormData] = useState({
     fullName: "",
@@ -14,6 +14,7 @@ export default function Apply() {
     portfolio: "",
     availability: "",
     message: "",
+    profileImage: "",
   });
 
   const [settings, setSettings] = useState(null);
@@ -80,6 +81,7 @@ export default function Apply() {
       portfolio: "",
       availability: "",
       message: "",
+      profileImage: "",
     });
   };
 
@@ -139,15 +141,15 @@ export default function Apply() {
   }
 
   return (
-    <main className="bg-white text-black">
+    <main className="w-full overflow-x-hidden bg-white text-black">
       {/* HEADER */}
       <section className="border-b border-slate-200 bg-white">
-        <div className="mx-auto max-w-7xl px-6 py-20">
-          <p className="font-bold uppercase tracking-[0.25em] text-red-700">
+        <div className="mx-auto max-w-7xl px-4 py-14 md:px-6 md:py-20">
+          <p className="text-xs font-bold uppercase tracking-[0.25em] text-red-700 sm:text-sm">
             Model Application
           </p>
 
-          <h1 className="mt-4 text-5xl font-black text-slate-950 md:text-7xl">
+          <h1 className="mt-4 text-4xl font-black leading-tight text-slate-950 sm:text-5xl md:text-7xl">
             Apply to{" "}
             {businessName === "The QueensMen" ? (
               <>
@@ -158,7 +160,7 @@ export default function Apply() {
             )}
           </h1>
 
-          <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
+          <p className="mt-5 max-w-3xl text-base leading-7 text-slate-600 md:text-lg md:leading-8">
             Submit your information for review. The team will look over your
             experience, availability, social links, and professional details.
           </p>
@@ -166,19 +168,19 @@ export default function Apply() {
       </section>
 
       {/* CONTENT */}
-      <section className="mx-auto grid max-w-7xl gap-10 px-6 py-16 lg:grid-cols-[1fr_1.4fr]">
+      <section className="mx-auto grid max-w-7xl gap-8 px-4 py-10 md:px-6 md:py-16 lg:grid-cols-[1fr_1.4fr]">
         {/* SIDE INFO */}
         <aside className="grid gap-6">
-          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-8 shadow-xl">
-            <p className="font-bold uppercase tracking-[0.25em] text-red-700">
+          <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6 shadow-xl md:p-8">
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-red-700 sm:text-sm">
               Application Info
             </p>
 
-            <h2 className="mt-3 text-3xl font-black text-slate-950">
+            <h2 className="mt-3 text-2xl font-black text-slate-950 md:text-3xl">
               Apply to {businessName}
             </h2>
 
-            <p className="mt-4 leading-7 text-slate-600">
+            <p className="mt-4 text-sm leading-7 text-slate-600 md:text-base">
               Complete the form with accurate contact information and model
               details. If selected, the team will follow up with next steps.
             </p>
@@ -191,7 +193,7 @@ export default function Apply() {
 
                 <a
                   href={`mailto:${email}`}
-                  className="mt-2 block break-words text-lg font-black text-slate-950 hover:text-red-700"
+                  className="mt-2 block break-words text-base font-black text-slate-950 transition hover:text-red-700 md:text-lg"
                 >
                   {email}
                 </a>
@@ -204,7 +206,7 @@ export default function Apply() {
 
                 <a
                   href={`tel:${phone.replace(/\D/g, "")}`}
-                  className="mt-2 block text-lg font-black text-slate-950 hover:text-red-700"
+                  className="mt-2 block text-base font-black text-slate-950 transition hover:text-red-700 md:text-lg"
                 >
                   {phone}
                 </a>
@@ -212,7 +214,7 @@ export default function Apply() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-xl md:p-8">
             <h3 className="text-2xl font-black text-slate-950">
               What to include
             </h3>
@@ -225,8 +227,8 @@ export default function Apply() {
             </div>
           </div>
 
-          <div className="rounded-3xl border-l-4 border-red-700 bg-slate-50 p-6 shadow-sm ring-1 ring-slate-200">
-            <p className="text-sm font-semibold leading-6 text-slate-600">
+          <div className="rounded-3xl border-l-4 border-red-700 bg-slate-50 p-5 shadow-sm ring-1 ring-slate-200 md:p-6">
+            <p className="text-sm leading-6 text-slate-600">
               Please use your real contact information so the owner can reach
               you if your application is selected.
             </p>
@@ -236,13 +238,13 @@ export default function Apply() {
         {/* FORM */}
         <form
           onSubmit={handleSubmit}
-          className="rounded-3xl border border-slate-200 bg-white p-8 text-black shadow-2xl"
+          className="w-full overflow-hidden rounded-3xl border border-slate-200 bg-white p-5 text-black shadow-2xl md:p-8"
         >
-          <h2 className="text-3xl font-black text-slate-950">
+          <h2 className="text-2xl font-black text-slate-950 md:text-3xl">
             Application Form
           </h2>
 
-          <p className="mt-2 text-slate-600">
+          <p className="mt-2 text-sm text-slate-600 md:text-base">
             Fields marked with required validation must be completed before
             submitting.
           </p>
@@ -252,13 +254,14 @@ export default function Apply() {
               <label className="mb-2 block text-sm font-bold text-slate-700">
                 Full Name *
               </label>
+
               <input
                 type="text"
                 name="fullName"
                 value={formData.fullName}
                 onChange={handleChange}
                 required
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-red-700"
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-red-700"
                 placeholder="Your full name"
               />
             </div>
@@ -267,13 +270,14 @@ export default function Apply() {
               <label className="mb-2 block text-sm font-bold text-slate-700">
                 Email *
               </label>
+
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-red-700"
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-red-700"
                 placeholder="you@example.com"
               />
             </div>
@@ -282,13 +286,14 @@ export default function Apply() {
               <label className="mb-2 block text-sm font-bold text-slate-700">
                 Phone *
               </label>
+
               <input
                 type="tel"
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
                 required
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-red-700"
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-red-700"
                 placeholder="Your phone number"
               />
             </div>
@@ -297,13 +302,14 @@ export default function Apply() {
               <label className="mb-2 block text-sm font-bold text-slate-700">
                 Location *
               </label>
+
               <input
                 type="text"
                 name="location"
                 value={formData.location}
                 onChange={handleChange}
                 required
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-red-700"
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-red-700"
                 placeholder="City, State"
               />
             </div>
@@ -312,13 +318,14 @@ export default function Apply() {
               <label className="mb-2 block text-sm font-bold text-slate-700">
                 Age
               </label>
+
               <input
                 type="number"
                 name="age"
                 value={formData.age}
                 onChange={handleChange}
                 min="18"
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-red-700"
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-red-700"
                 placeholder="Example: 25"
               />
             </div>
@@ -327,13 +334,14 @@ export default function Apply() {
               <label className="mb-2 block text-sm font-bold text-slate-700">
                 Height
               </label>
+
               <input
                 type="text"
                 name="height"
                 value={formData.height}
                 onChange={handleChange}
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-red-700"
-                placeholder="Example: 6'1&quot;"
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-red-700"
+                placeholder={`Example: 6'1"`}
               />
             </div>
 
@@ -341,11 +349,12 @@ export default function Apply() {
               <label className="mb-2 block text-sm font-bold text-slate-700">
                 Experience
               </label>
+
               <select
                 name="experience"
                 value={formData.experience}
                 onChange={handleChange}
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-red-700"
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-red-700"
               >
                 <option value="">Select experience level</option>
                 <option value="New Model">New Model</option>
@@ -362,12 +371,13 @@ export default function Apply() {
               <label className="mb-2 block text-sm font-bold text-slate-700">
                 Availability
               </label>
+
               <input
                 type="text"
                 name="availability"
                 value={formData.availability}
                 onChange={handleChange}
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-red-700"
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-red-700"
                 placeholder="Weekends, evenings, flexible..."
               />
             </div>
@@ -376,12 +386,13 @@ export default function Apply() {
               <label className="mb-2 block text-sm font-bold text-slate-700">
                 Instagram
               </label>
+
               <input
                 type="text"
                 name="instagram"
                 value={formData.instagram}
                 onChange={handleChange}
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-red-700"
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-red-700"
                 placeholder="@username or profile link"
               />
             </div>
@@ -390,27 +401,54 @@ export default function Apply() {
               <label className="mb-2 block text-sm font-bold text-slate-700">
                 Portfolio / Photo Link
               </label>
+
               <input
                 type="url"
                 name="portfolio"
                 value={formData.portfolio}
                 onChange={handleChange}
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-red-700"
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-red-700"
                 placeholder="https://..."
               />
             </div>
-          </div>
 
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-sm font-bold text-slate-700">
+                Profile Photo
+              </label>
+
+              <ImageUpload
+                label="Upload Profile Photo"
+                onUpload={(imageUrl) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    profileImage: imageUrl,
+                  }))
+                }
+              />
+
+              {formData.profileImage && (
+                <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <img
+                    src={formData.profileImage}
+                    alt="Profile preview"
+                    className="mx-auto h-64 w-full rounded-xl object-contain"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
           <div className="mt-5">
             <label className="mb-2 block text-sm font-bold text-slate-700">
               Message
             </label>
+
             <textarea
               name="message"
               value={formData.message}
               onChange={handleChange}
               rows="6"
-              className="w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-red-700"
+              className="w-full resize-none rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-red-700"
               placeholder="Tell us why you want to model with The QueensMen..."
             />
           </div>
@@ -430,7 +468,7 @@ export default function Apply() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-6 w-full rounded-full bg-red-700 px-6 py-4 font-black text-white shadow-lg hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-6 w-full rounded-full bg-red-700 px-5 py-3 text-sm font-black text-white shadow-lg transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60 md:px-6 md:py-4 md:text-base"
           >
             {loading ? "Submitting..." : "Submit Application"}
           </button>

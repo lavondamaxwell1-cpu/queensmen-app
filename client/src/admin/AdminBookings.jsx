@@ -5,10 +5,10 @@ import AdminNavbar from "../components/AdminNavbar";
 export default function AdminBookings() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [updatingId, setUpdatingId] = useState(null);
+  // const [updatingId, setUpdatingId] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState("");
-
+  const [models, setModels] = useState([]);
   useEffect(() => {
     let ignore = false;
 
@@ -18,10 +18,16 @@ export default function AdminBookings() {
         setError("");
 
         const { data } = await API.get("/api/bookings");
+       const { data: modelData } = await API.get("/api/models");
 
-        if (!ignore) {
-          setBookings(data.bookings || []);
-        }
+       const loadedModels = Array.isArray(modelData)
+         ? modelData
+         : modelData.models || modelData.data || [];
+
+       if (!ignore) {
+         setBookings(data.bookings || []);
+         setModels(loadedModels);
+       }
       } catch (error) {
         console.error("Fetch bookings error:", error);
 
@@ -44,31 +50,6 @@ export default function AdminBookings() {
       ignore = true;
     };
   }, []);
-
-  const handleStatusChange = async (bookingId, status) => {
-    try {
-      setUpdatingId(bookingId);
-
-      const { data } = await API.patch(`/api/bookings/${bookingId}/status`, {
-        status,
-      });
-
-      setBookings((prev) =>
-        prev.map((booking) =>
-          booking._id === bookingId ? data.booking : booking,
-        ),
-      );
-    } catch (error) {
-      console.error("Update booking status error:", error);
-
-      alert(
-        error.response?.data?.message ||
-          "Something went wrong while updating booking status.",
-      );
-    } finally {
-      setUpdatingId(null);
-    }
-  };
 
   const handleDelete = async (bookingId) => {
     const confirmDelete = window.confirm(
@@ -97,21 +78,21 @@ export default function AdminBookings() {
     }
   };
 
-  const getStatusClass = (status) => {
-    if (status === "Approved") {
-      return "bg-green-50 text-green-700 ring-green-200";
-    }
+  // const getStatusClass = (status) => {
+  //   if (status === "Approved") {
+  //     return "bg-green-50 text-green-700 ring-green-200";
+  //   }
 
-    if (status === "Declined") {
-      return "bg-red-50 text-red-700 ring-red-200";
-    }
+  //   if (status === "Declined") {
+  //     return "bg-red-50 text-red-700 ring-red-200";
+  //   }
 
-    if (status === "Reviewed") {
-      return "bg-blue-50 text-blue-700 ring-blue-200";
-    }
+  //   if (status === "Reviewed") {
+  //     return "bg-blue-50 text-blue-700 ring-blue-200";
+  //   }
 
-    return "bg-yellow-50 text-yellow-700 ring-yellow-200";
-  };
+  //   return "bg-yellow-50 text-yellow-700 ring-yellow-200";
+  // };
 
   const pendingCount = bookings.filter(
     (booking) => booking.status === "Pending",
@@ -119,7 +100,7 @@ export default function AdminBookings() {
 
   const updateBookingStatus = async (id, status, adminNotes = "") => {
     try {
-      const { data } = await API.put(`/api/bookings/${id}/status`, {
+      const { data } = await API.patch(`/api/bookings/${id}/status`, {
         status,
         adminNotes,
       });
@@ -136,12 +117,45 @@ export default function AdminBookings() {
       );
     }
   };
+  const handleAssignModels = async (bookingId, modelIds) => {
+    try {
+      const { data } = await API.patch(
+        `/api/bookings/${bookingId}/assign-models`,
+        {
+          modelIds,
+        },
+      );
 
+      setBookings((prev) =>
+        prev.map((booking) =>
+          booking._id === bookingId ? data.booking : booking,
+        ),
+      );
+    } catch (error) {
+      console.error("Assign models error:", error);
+
+      alert(
+        error.response?.data?.message ||
+          "Something went wrong while assigning models.",
+      );
+    }
+  };
+
+  const getModelSchedule = (modelId) => {
+    return bookings
+      .filter((booking) =>
+        (booking.assignedModels || []).some(
+          (model) => String(model._id || model) === String(modelId),
+        ),
+      )
+      .filter((booking) => booking.eventDate)
+      .sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate));
+  };
   return (
-    <>
+    <div className="w-full overflow-x-hidden">
       <AdminNavbar />
 
-      <main className="min-h-screen bg-slate-50 px-6 py-16 text-black">
+      <main className="min-h-screen overflow-x-hidden bg-slate-50 px-4 py-10 text-black md:px-6 md:py-16">
         <div className="mx-auto max-w-7xl">
           {/* HEADER */}
           <section className="mb-10 rounded-[2rem] border border-slate-200 bg-white p-8 shadow-xl">
@@ -151,7 +165,7 @@ export default function AdminBookings() {
 
             <div className="mt-4 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
               <div>
-                <h1 className="text-4xl font-black text-slate-950 md:text-5xl">
+                <h1 className="text-3xl font-black text-slate-950 sm:text-4xl md:text-5xl">
                   Review <span className="text-red-700">Bookings</span>
                 </h1>
 
@@ -206,7 +220,7 @@ export default function AdminBookings() {
               {bookings.map((booking) => (
                 <article
                   key={booking._id}
-                  className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-xl"
+                  className="w-full overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-4 shadow-xl md:p-6"
                 >
                   <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
                     {/* LEFT SIDE */}
@@ -256,7 +270,7 @@ export default function AdminBookings() {
                               booking.adminNotes || "",
                             )
                           }
-                          className="rounded-xl border border-slate-300 bg-white px-4 py-2 font-bold outline-none focus:border-red-700"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold outline-none focus:border-red-700 sm:w-auto"
                         >
                           <option value="Pending">Pending</option>
                           <option value="Approved">Approved</option>
@@ -294,12 +308,12 @@ export default function AdminBookings() {
                     </div>
 
                     {/* RIGHT SIDE */}
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex w-full flex-wrap gap-3 lg:w-auto">
                       <button
                         type="button"
                         disabled={deletingId === booking._id}
                         onClick={() => handleDelete(booking._id)}
-                        className="rounded-full border border-red-700 px-5 py-3 text-sm font-black text-red-700 hover:bg-red-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                        className="rounded-full border border-red-700 px-4 py-2 text-xs font-black text-red-700 transition hover:bg-red-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-60 md:px-5 md:py-3 md:text-sm"
                       >
                         {deletingId === booking._id ? "Deleting..." : "Delete"}
                       </button>
@@ -307,7 +321,7 @@ export default function AdminBookings() {
                   </div>
 
                   {/* DETAILS GRID */}
-                  <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
                       <p className="text-xs font-black uppercase tracking-widest text-red-700">
                         Email
@@ -348,7 +362,24 @@ export default function AdminBookings() {
                           : "Not provided"}
                       </p>
                     </div>
+                    <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                      <p className="text-xs font-black uppercase tracking-widest text-red-700">
+                        Event Time
+                      </p>
 
+                      <p className="mt-2 font-bold text-slate-900">
+                        {booking.eventTime || "Not provided"}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                      <p className="text-xs font-black uppercase tracking-widest text-red-700">
+                        Duration
+                      </p>
+
+                      <p className="mt-2 font-bold text-slate-900">
+                        {booking.eventDuration || "Not provided"}
+                      </p>
+                    </div>
                     <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
                       <p className="text-xs font-black uppercase tracking-widest text-red-700">
                         Models Needed
@@ -382,7 +413,98 @@ export default function AdminBookings() {
                       </p>
                     </div>
                   </div>
+                  <div className="mt-5 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                    <p className="text-xs font-black uppercase tracking-widest text-red-700">
+                      Assigned Models
+                    </p>
+                    <select
+                      multiple
+                      value={(booking.assignedModels || []).map(
+                        (model) => model._id || model,
+                      )}
+                      onChange={(e) =>
+                        handleAssignModels(
+                          booking._id,
+                          Array.from(e.target.selectedOptions).map(
+                            (option) => option.value,
+                          ),
+                        )
+                      }
+                      className="mt-3 min-h-[140px] w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold outline-none focus:border-red-700"
+                    >
+                      {models.map((model) => (
+                        <option key={model._id} value={model._id}>
+                          {model.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-3 text-xs font-semibold text-slate-500">
+                      Hold Ctrl or Command to select multiple models.
+                    </p>
+                    {(booking.assignedModels || []).length > 0 && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {booking.assignedModels.map((model) => (
+                          <span
+                            key={model._id || model}
+                            className="rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-700 ring-1 ring-red-200"
+                          >
+                            {model.name || "Assigned model"}
+                          </span>
+                        ))}
+                      </div>
+                    )}{" "}
+                    {(booking.assignedModels || []).length > 0 && (
+                      <div className="mt-4 grid gap-3">
+                        {booking.assignedModels.map((model) => {
+                          const modelId = model._id || model;
+                          const schedule = getModelSchedule(modelId);
 
+                          return (
+                            <div
+                              key={modelId}
+                              className="rounded-2xl bg-white p-4 ring-1 ring-slate-200"
+                            >
+                              <span className="inline-flex rounded-full bg-red-50 px-3 py-1 text-xs font-black text-red-700 ring-1 ring-red-200">
+                                {model.name ||
+                                  model.fullName ||
+                                  "Assigned model"}
+                              </span>
+
+                              <div className="mt-3">
+                                <p className="text-xs font-black uppercase tracking-widest text-slate-500">
+                                  Upcoming Schedule
+                                </p>
+
+                                {schedule.length === 0 ? (
+                                  <p className="mt-2 text-sm font-semibold text-slate-500">
+                                    No upcoming bookings found.
+                                  </p>
+                                ) : (
+                                  <div className="mt-2 grid gap-2">
+                                    {schedule.slice(0, 4).map((item) => (
+                                      <p
+                                        key={item._id}
+                                        className="rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700"
+                                      >
+                                        {item.eventDate
+                                          ? new Date(
+                                              item.eventDate,
+                                            ).toLocaleDateString()
+                                          : "No date"}{" "}
+                                        • {item.eventTime || "No time"} •{" "}
+                                        {item.eventType || "Booking"} •{" "}
+                                        {item.status || "Pending"}
+                                      </p>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
                   {/* MESSAGE */}
                   {booking.message && (
                     <div className="mt-5 rounded-2xl border-l-4 border-red-700 bg-slate-50 p-5 ring-1 ring-slate-200">
@@ -401,6 +523,6 @@ export default function AdminBookings() {
           )}
         </div>
       </main>
-    </>
+    </div>
   );
 }

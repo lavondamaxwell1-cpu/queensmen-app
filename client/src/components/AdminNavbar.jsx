@@ -175,7 +175,13 @@ export default function AdminNavbar() {
             >
               Bookings
             </NavLink>
-
+            <NavLink
+              to="/admin/calendar"
+              onClick={closeAllMenus}
+              className={dropdownLinkClass}
+            >
+              Calendar
+            </NavLink>
             <NavLink
               to="/admin/messages"
               onClick={closeAllMenus}
@@ -193,7 +199,13 @@ export default function AdminNavbar() {
             >
               Admins
             </NavLink>
-
+            <NavLink
+              to="/admin/analytics"
+              onClick={closeAllMenus}
+              className={dropdownLinkClass}
+            >
+              Analytics
+            </NavLink>
             <NavLink
               to="/admin/change-password"
               onClick={closeAllMenus}
@@ -301,7 +313,13 @@ export default function AdminNavbar() {
               >
                 Bookings
               </NavLink>
-
+              <NavLink
+                to="/admin/calendar"
+                onClick={closeAllMenus}
+                className={dropdownLinkClass}
+              >
+                Calendar
+              </NavLink>
               <NavLink
                 to="/admin/messages"
                 onClick={closeAllMenus}
@@ -323,7 +341,13 @@ export default function AdminNavbar() {
               >
                 Admins
               </NavLink>
-
+              <NavLink
+                to="/admin/analytics"
+                onClick={closeAllMenus}
+                className={dropdownLinkClass}
+              >
+                Analytics
+              </NavLink>
               <NavLink
                 to="/admin/change-password"
                 onClick={closeAllMenus}

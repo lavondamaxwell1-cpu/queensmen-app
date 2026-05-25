@@ -24,6 +24,9 @@ import AdminChangePassword from "./admin/AdminChangePassword";
 import AdminForgotPassword from "./admin/AdminForgotPassword";
 import AdminResetPassword from "./admin/AdminResetPassword";
 import AdminUsers from "./admin/AdminUsers";
+import AdminCalendar from "./admin/AdminCalendar";
+
+import AdminAnalytics from "./admin/AdminAnalytics";
 function AppLayout() {
   const location = useLocation();
 
@@ -137,6 +140,22 @@ function AppLayout() {
           element={
             <ProtectedAdminRoute>
               <AdminUsers />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/calendar"
+          element={
+            <ProtectedAdminRoute>
+              <AdminCalendar />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/analytics"
+          element={
+            <ProtectedAdminRoute>
+              <AdminAnalytics />
             </ProtectedAdminRoute>
           }
         />

@@ -13,6 +13,8 @@ export default function BookModel() {
     numberOfModels: "",
     budget: "",
     message: "",
+    eventTime: "",
+    eventDuration: "",
   });
 
   const [settings, setSettings] = useState(null);
@@ -78,6 +80,8 @@ export default function BookModel() {
       numberOfModels: "",
       budget: "",
       message: "",
+      eventTime: "",
+      eventDuration: "",
     });
   };
 
@@ -357,7 +361,40 @@ export default function BookModel() {
                 className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-red-700"
               />
             </div>
+            <div>
+              <label className="mb-2 block text-sm font-bold text-slate-700">
+                Event Time
+              </label>
 
+              <input
+                type="time"
+                name="eventTime"
+                value={formData.eventTime}
+                onChange={handleChange}
+                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-red-700"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-bold text-slate-700">
+                Event Duration
+              </label>
+
+              <select
+                name="eventDuration"
+                value={formData.eventDuration}
+                onChange={handleChange}
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-red-700"
+              >
+                <option value="">Select duration</option>
+                <option value="1 Hour">1 Hour</option>
+                <option value="2 Hours">2 Hours</option>
+                <option value="3 Hours">3 Hours</option>
+                <option value="4 Hours">4 Hours</option>
+                <option value="Half Day">Half Day</option>
+                <option value="Full Day">Full Day</option>
+              </select>
+            </div>
             <div>
               <label className="mb-2 block text-sm font-bold text-slate-700">
                 Event Location *

@@ -9,18 +9,20 @@ import sendEmail from "../utils/sendEmail.js";
 // @access  Public
 router.post("/", async (req, res) => {
   try {
-    const {
-      fullName,
-      email,
-      phone,
-      location,
-      age,
-      height,
-      experience,
-      instagram,
-      message,
-    } = req.body;
-
+   const {
+     fullName,
+     email,
+     phone,
+     location,
+     age,
+     height,
+     experience,
+     instagram,
+     portfolio,
+     availability,
+     profileImage,
+     message,
+   } = req.body;
     if (!fullName || !email || !phone || !location || !age || !experience) {
       return res.status(400).json({
         success: false,
@@ -28,17 +30,20 @@ router.post("/", async (req, res) => {
       });
     }
 
-    const application = await Application.create({
-      fullName,
-      email,
-      phone,
-      location,
-      age,
-      height,
-      experience,
-      instagram,
-      message,
-    });
+   const application = await Application.create({
+     fullName,
+     email,
+     phone,
+     location,
+     age,
+     height,
+     experience,
+     instagram,
+     portfolio,
+     availability,
+     profileImage,
+     message,
+   });
 try {
   await sendEmail({
     to: process.env.OWNER_EMAIL,

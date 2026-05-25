@@ -3,7 +3,65 @@ import Booking from "../models/Booking.js";
 import adminProtect from "../middleware/adminProtect.js";
 import sendEmail from "../utils/sendEmail.js";
 
+const getDurationHours = (duration) => {
+  if (!duration) return 1;
+
+  if (duration === "1 Hour") return 1;
+  if (duration === "2 Hours") return 2;
+  if (duration === "3 Hours") return 3;
+  if (duration === "4 Hours") return 4;
+  if (duration === "Half Day") return 4;
+  if (duration === "Full Day") return 8;
+
+  return 1;
+};
+
+const buildBookingDateTime = (eventDate, eventTime) => {
+  const date = new Date(eventDate);
+
+  if (!eventTime) {
+    date.setHours(9, 0, 0, 0);
+    return date;
+  }
+
+  const [hours, minutes] = eventTime.split(":");
+
+  date.setHours(Number(hours || 9), Number(minutes || 0), 0, 0);
+
+  return date;
+};
+
+const bookingsOverlap = (firstStart, firstEnd, secondStart, secondEnd) => {
+  return firstStart < secondEnd && secondStart < firstEnd;
+};
+
+
 const router = express.Router();
+
+
+// @route   GET /api/bookings
+// @desc    Get all bookings
+// @access  Admin
+router.get("/", adminProtect, async (req, res) => {
+  try {
+    const bookings = await Booking.find()
+      .populate("assignedModels")
+      .sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      bookings,
+    });
+  } catch (error) {
+    console.error("Fetch bookings error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server error while loading bookings.",
+    });
+  }
+});
+
+
 
 // @route   POST /api/booking
 // @desc    Submit booking request
@@ -21,6 +79,8 @@ router.post("/", async (req, res) => {
       numberOfModels,
       budget,
       message,
+      eventTime,
+      eventDuration,
     } = req.body;
 
     if (
@@ -49,6 +109,10 @@ router.post("/", async (req, res) => {
       numberOfModels,
       budget,
       message,
+      eventTime,
+      eventDuration,
+      eventTime,
+      eventDuration,
     });
 
     try {
@@ -128,36 +192,21 @@ try {
   }
 });
 
-// @route   GET /api/bookings
-// @desc    Get all booking requests
-// @access  Admin
-router.get("/", adminProtect, async (req, res) => {
-  try {
-    const bookings = await Booking.find().sort({ createdAt: -1 });
-
-    res.json({
-      success: true,
-      count: bookings.length,
-      bookings,
-    });
-  } catch (error) {
-    console.error("Get bookings error:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Server error while getting bookings.",
-    });
-  }
-});
-
 // @route   PATCH /api/bookings/:id/status
-// @desc    Update booking status and email client
+// @desc    Update booking status, check conflicts, and email client
 // @access  Admin
 router.patch("/:id/status", adminProtect, async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, adminNotes } = req.body;
 
-    const allowedStatuses = ["Pending", "Reviewed", "Approved", "Declined"];
+    const allowedStatuses = [
+      "Pending",
+      "Reviewed",
+      "Approved",
+      "Declined",
+      "Completed",
+      "Canceled",
+    ];
 
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({
@@ -176,59 +225,96 @@ router.patch("/:id/status", adminProtect, async (req, res) => {
     }
 
     const previousStatus = booking.status;
+    const nextStatus = status || booking.status;
 
-    booking.status = status;
+    if (nextStatus === "Approved") {
+      if (!booking.eventDate || !booking.eventTime) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "This booking needs an event date and event time before it can be approved.",
+        });
+      }
+
+      const currentStart = buildBookingDateTime(
+        booking.eventDate,
+        booking.eventTime,
+      );
+
+      const currentEnd = new Date(currentStart);
+      currentEnd.setHours(
+        currentEnd.getHours() + getDurationHours(booking.eventDuration),
+      );
+
+      const approvedBookings = await Booking.find({
+        _id: { $ne: booking._id },
+        status: "Approved",
+        eventDate: booking.eventDate,
+      });
+
+      const conflict = approvedBookings.find((approvedBooking) => {
+        const approvedStart = buildBookingDateTime(
+          approvedBooking.eventDate,
+          approvedBooking.eventTime,
+        );
+
+        const approvedEnd = new Date(approvedStart);
+        approvedEnd.setHours(
+          approvedEnd.getHours() +
+            getDurationHours(approvedBooking.eventDuration),
+        );
+
+        return bookingsOverlap(
+          currentStart,
+          currentEnd,
+          approvedStart,
+          approvedEnd,
+        );
+      });
+
+      if (conflict) {
+        return res.status(409).json({
+          success: false,
+          message: `Scheduling conflict: ${conflict.fullName} already has an approved booking during this time.`,
+        });
+      }
+    }
+
+    booking.status = nextStatus;
+
+    if (adminNotes !== undefined) {
+      booking.adminNotes = adminNotes;
+    }
 
     const updatedBooking = await booking.save();
 
-    // Only email client when status actually changes
-    if (previousStatus !== status && ["Approved", "Declined"].includes(status)) {
+    if (
+      previousStatus !== nextStatus &&
+      ["Approved", "Declined", "Completed", "Canceled"].includes(nextStatus)
+    ) {
       try {
-        const isApproved = status === "Approved";
-
         await sendEmail({
           to: updatedBooking.email,
-          subject: isApproved
-            ? "Your QueensMen booking request was approved"
-            : "Update on your QueensMen booking request",
+          subject: `Your QueensMen booking status: ${updatedBooking.status}`,
           html: `
             <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-              <h2>
-                ${
-                  isApproved
-                    ? "Your booking request was approved"
-                    : "Your booking request was declined"
-                }
-              </h2>
-
+              <h2>Booking Status Updated</h2>
               <p>Hi ${updatedBooking.fullName},</p>
-
-              <p>
-                ${
-                  isApproved
-                    ? "Good news! Your booking request for The QueensMen has been approved. Our team will follow up with final details."
-                    : "Thank you for your interest in booking The QueensMen. Unfortunately, this booking request was declined at this time."
-                }
-              </p>
-
-              <h3>Booking Details</h3>
-
-              <p><strong>Event Type:</strong> ${updatedBooking.eventType}</p>
-
+              <p>Your booking status is now <strong>${updatedBooking.status}</strong>.</p>
+              <p><strong>Event Type:</strong> ${updatedBooking.eventType || "N/A"}</p>
               <p><strong>Event Date:</strong> ${
                 updatedBooking.eventDate
                   ? new Date(updatedBooking.eventDate).toLocaleDateString()
                   : "N/A"
               }</p>
-
-              <p><strong>Location:</strong> ${updatedBooking.location}</p>
-
-              <p><strong>Models Needed:</strong> ${
-                updatedBooking.numberOfModels
-              }</p>
-
-              <p><strong>Status:</strong> ${updatedBooking.status}</p>
-
+              <p><strong>Event Time:</strong> ${updatedBooking.eventTime || "N/A"}</p>
+              <p><strong>Duration:</strong> ${updatedBooking.eventDuration || "N/A"}</p>
+              <p><strong>Location:</strong> ${updatedBooking.location || "N/A"}</p>
+              ${
+                updatedBooking.adminNotes
+                  ? `<p><strong>Notes:</strong> ${updatedBooking.adminNotes}</p>`
+                  : ""
+              }
               <p style="margin-top: 24px;">
                 Thank you,<br />
                 <strong>The QueensMen Team</strong>
@@ -257,13 +343,11 @@ router.patch("/:id/status", adminProtect, async (req, res) => {
 });
 
 
-// @route   PUT /api/bookings/:id/status
-// @desc    Update booking status
+// @route   DELETE /api/bookings/:id
+// @desc    Delete booking
 // @access  Admin
-router.put("/:id/status", adminProtect, async (req, res) => {
+router.delete("/:id", async (req, res) => {
   try {
-    const { status, adminNotes } = req.body;
-
     const booking = await Booking.findById(req.params.id);
 
     if (!booking) {
@@ -273,92 +357,111 @@ router.put("/:id/status", adminProtect, async (req, res) => {
       });
     }
 
-    booking.status = status || booking.status;
-
-    if (adminNotes !== undefined) {
-      booking.adminNotes = adminNotes;
-    }
-
-    await booking.save();
-    await sendEmail({
-      to: booking.email,
-      subject: `Booking Status Updated - ${booking.status}`,
-
-      html: `
-    <div style="font-family: Arial, sans-serif; padding: 30px; background: #f8fafc;">
-      
-      <div style="max-width: 600px; margin: auto; background: white; border-radius: 20px; padding: 40px;">
-        
-        <h1 style="color: #b91c1c; margin-bottom: 10px;">
-          The QueensMen
-        </h1>
-
-        <h2 style="margin-top: 0; color: #111827;">
-          Booking Status Updated
-        </h2>
-
-        <p style="font-size: 16px; color: #374151;">
-          Hello ${booking.fullName},
-        </p>
-
-        <p style="font-size: 16px; color: #374151; line-height: 1.7;">
-          Your booking request has been updated by our team.
-        </p>
-
-        <div
-          style="
-            margin-top: 30px;
-            margin-bottom: 30px;
-            padding: 20px;
-            border-radius: 16px;
-            background: #f3f4f6;
-          "
-        >
-          <p style="margin: 0; font-size: 15px;">
-            <strong>Status:</strong>
-            ${booking.status}
-          </p>
-
-          ${
-            booking.adminNotes
-              ? `
-            <div style="margin-top: 15px;">
-              <strong>Admin Notes:</strong>
-              <p style="margin-top: 8px; line-height: 1.6;">
-                ${booking.adminNotes}
-              </p>
-            </div>
-          `
-              : ""
-          }
-        </div>
-
-        <p style="font-size: 16px; color: #374151;">
-          Thank you for choosing The QueensMen.
-        </p>
-
-        <p style="margin-top: 30px; color: #6b7280;">
-          — The QueensMen Team
-        </p>
-      </div>
-    </div>
-  `,
-    });
+    await booking.deleteOne();
 
     res.json({
       success: true,
-      message: "Booking updated successfully.",
-      booking,
+      message: "Booking deleted successfully.",
     });
   } catch (error) {
-    console.error("Update booking status error:", error);
+    console.error("Delete booking error:", error);
 
     res.status(500).json({
       success: false,
-      message: "Server error while updating booking.",
+      message: "Server error while deleting booking.",
     });
   }
 });
+// @route   PATCH /api/bookings/:id/assign-models
+// @desc    Assign models to booking
+// @access  Admin
+router.patch("/:id/assign-models", adminProtect, async (req, res) => {
+  try {
+    const { modelIds } = req.body;
 
+    if (!Array.isArray(modelIds)) {
+      return res.status(400).json({
+        success: false,
+        message: "modelIds must be an array.",
+      });
+    }
 
+    const booking = await Booking.findById(req.params.id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found.",
+      });
+    }
+const currentStart = buildBookingDateTime(booking.eventDate, booking.eventTime);
+
+const currentEnd = new Date(currentStart);
+
+currentEnd.setHours(
+  currentEnd.getHours() + getDurationHours(booking.eventDuration),
+);
+
+const conflictingBookings = await Booking.find({
+  _id: { $ne: booking._id },
+  status: "Approved",
+  eventDate: booking.eventDate,
+}).populate("assignedModels");
+
+for (const existingBooking of conflictingBookings) {
+  const existingStart = buildBookingDateTime(
+    existingBooking.eventDate,
+    existingBooking.eventTime,
+  );
+
+  const existingEnd = new Date(existingStart);
+
+  existingEnd.setHours(
+    existingEnd.getHours() + getDurationHours(existingBooking.eventDuration),
+  );
+
+  const overlaps = bookingsOverlap(
+    currentStart,
+    currentEnd,
+    existingStart,
+    existingEnd,
+  );
+
+  if (!overlaps) continue;
+
+  const conflictingModels = existingBooking.assignedModels.filter((model) =>
+    modelIds.includes(model._id.toString()),
+  );
+
+  if (conflictingModels.length > 0) {
+    return res.status(409).json({
+      success: false,
+      message: `Scheduling conflict: ${
+        conflictingModels[0].name || conflictingModels[0].fullName || "Model"
+      } is already assigned to another booking during this time.`,
+    });
+  }
+}
+    booking.assignedModels = modelIds;
+
+    await booking.save();
+
+    const updatedBooking = await Booking.findById(req.params.id).populate(
+      "assignedModels",
+    );
+
+    res.json({
+      success: true,
+      message: "Models assigned successfully.",
+      booking: updatedBooking,
+    });
+  } catch (error) {
+    console.error("Assign models error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server error while assigning models.",
+    });
+  }
+});
 export default router;

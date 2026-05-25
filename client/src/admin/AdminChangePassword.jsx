@@ -112,7 +112,7 @@ export default function AdminChangePassword() {
 
       setError(
         error.response?.data?.message ||
-          "Something went wrong while changing the password.",
+          "Something went wrong while changing the password."
       );
 
       setTimeout(() => {

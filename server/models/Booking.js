@@ -36,12 +36,22 @@ const bookingSchema = new mongoose.Schema(
         "Promotional Event",
         "Private Event",
         "Other",
+        "Music Video Shoot",
       ],
     },
 
     eventDate: {
       type: Date,
       required: true,
+    },
+    eventTime: {
+      type: String,
+      default: "",
+    },
+
+    eventDuration: {
+      type: String,
+      default: "",
     },
 
     location: {
@@ -55,7 +65,12 @@ const bookingSchema = new mongoose.Schema(
       required: true,
       min: 1,
     },
-
+    assignedModels: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "ModelProfile",
+      },
+    ],
     budget: {
       type: String,
       trim: true,
